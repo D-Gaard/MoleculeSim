@@ -1,1 +1,4 @@
-effect of  Langevin /Brownian integrator
+effect of  Langevin /Brownian integrator (not needed any longer)
+
+- Hamaker constant approximation + use of boltzmann factor in VDW-forces (very poorly explained 
+  in litterature)
