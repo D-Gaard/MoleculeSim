@@ -19,6 +19,8 @@ class Molecule:
 
   def update_pos(self, pos):
     self.pos = pos
+  
+
 
 #NOTE
 #include diffusion coefficient/mass for groups? how to deal with multiple groups/molecules
@@ -37,13 +39,15 @@ def dummy_move(mol, threshold):
   x = np.random.uniform(0, 1)
 
 def get_energy(mol_fixed,mol_universe): #compute the energy of all molecules with respect to 
-
+  return 0
 
 
 # apply basic movement to molecule/group
 def step(universe,molecule,window):
   step_taken = False
-  while(not step_taken):
+  #while(not step_taken):
+    #...
+  return 0
 
 
 class SimpleUniverse:
@@ -54,6 +58,9 @@ class SimpleUniverse:
 
   def time_step(self): #apply a single timestep update of all groups
     for elm in self.molecules:
-      movement = step(elm ,window)
+      movement = 0#step(elm ,window)
       elm.move(movement)
 
+#the distance between two molecules
+def dist(m1,m2):
+  return np.linalg.norm([m1.pos,m2.pos])
