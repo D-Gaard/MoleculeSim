@@ -11,13 +11,29 @@ HAMAKER = 1.0 # Estimate of Hamaker constant for casein micelles,
 
 #Electri repulsion constants:
 EPS0 = consts.epsilon_0#electric permittivity of vacuum
-#EPS =  #dielectric constant of the solvent 
-#PHII = #electrostaticpotential at the surface of particle i
+EPS =  72#dielectric constant of the solvent, estimated to be in range [70,75] so far based on papers
+PHII = 8 #electrostaticpotential at the surface of particle i, generalized to be 8 based on papers
 #KAPPA = #inverse Debye length
+TEMPERATURE = 309.15 #kelvin = 36C
+I = 0.08 #Ionic strength, defined as (M,mol L)
 
 #steric repulstion constats:
 SIGMA = 0.006 #grafting density
-H = 0 #width of the polyelectrolyte brush
+H = 7 #width of the polyelectrolyte brush in nm
+
+def kappa():
+  nom = consts.epsilon_0 * EPS * consts.R * TEMPERATURE
+  denom = consts.physical_constants["Faraday constant"][0]**2 * I
+  return np.sqrt(nom/denom)
+
+def elec_repv2(m1,m2):
+  h = dist(m1,m2)-m1.radius-m2.radius
+  left = -2*np.pi*m1.radius*EPS0*EPS*(PHII**2)
+  right1 = kappa()**(-1)
+  right2 = np.exp(kappa()**(-1) * h)
+  right3 = np.log(1+np.exp(kappa()**(-1) * h))
+  print("left: ", left, ", kappa inv: ", right1, "h:", h, "np exp: ", right2, ", numpy log: ", right3)
+  return -2*np.pi*m1.radius*EPS0*EPS*(PHII**2) * np.log(1+np.exp(kappa()**(-1) * h))
 
 #Van der Waal (w.r. to m1)
 def vdw(m1,m2):
@@ -33,9 +49,9 @@ def vdw(m1,m2):
 
 #electrostatic repulsion (w.r. to m1)
 def elec_rep(m1,m2):
-  BU_el = EPS0 * e * phi_1 * phi_2 * np.log(1 + np.exp(-a1-a2))
-  U_el = BU_el
-  return 0
+  BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius))
+  #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
+  return BU_el
 
 
 #steric (w.r. to m1)
@@ -43,16 +59,15 @@ def steric(m1,m2):
   a_eff = ((1/m1.radius) + (1/m2.radius)) ** (-1)
   fst_nominator = 16 * np.pi * a_eff * H
   fst_denominator = 35 * SIGMA
-  #y= dist(m1,m2)
+  y= ((dist(m1,m2)-m1.radius-m2.radius) / (2*H))
 
 
-  snd = 28 * (pow(y,-1/4) - 1)
-  trd = 20/11 * (1 - pow(y,11/4))
+  snd = 28 * (y**(-1/4) - 1)
+  trd = (20/11) * (1 - y**(11/4))
   fth = 12 * (y - 1)
 
-  BU_st = fst_nominator / fst_denominator + snd + trd + fth
-  U_st = BU_st
-  return 0
+  BU_st = (fst_nominator / fst_denominator) * (snd + trd + fth)
+  return BU_st #*10**(-4.6)
 
 
 

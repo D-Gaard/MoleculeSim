@@ -2,3 +2,19 @@ effect of  Langevin /Brownian integrator (not needed any longer)
 
 - Hamaker constant approximation + use of boltzmann factor in VDW-forces (very poorly explained 
   in litterature)
+
+
+
+
+q's for 5/12:
+FORCES:
+electrostatic:
+- Dielectric constant defineret ud fra frequency i mange papers. Hvordan får man en "generel" constant ud fra en givet graf?
+- Dieletric constant i rå mælk baseret på moisture content dry basis. Værdier fremgår som water contents og ikke dry basis? (konstant estimeret til at være mellem 70-75)
+- paper 2 siger at 13% af mælken er casein miceller, men statistik siger at andelen er betydeligt lavere (22% af 12.6%)?
+- paper fra schmidt/poll fra milk dairy jouirnal, vol. 40:1986 kan ikke findes, fremgår som værende bibelen. Help?
+- 
+
+
+Simulation:
+is our system NVT (const temp) or NVE (const energy)
