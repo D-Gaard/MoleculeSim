@@ -49,17 +49,32 @@ def vdw(m1,m2):
 
 #electrostatic repulsion (w.r. to m1)
 def elec_rep(m1,m2):
-  BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius))
+  BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist(m1,m2)-m1.radius-m2.radius)))
   #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
+  return BU_el
+
+
+#electrostatic repulsion (w.r. to m1)
+def elec_rep3(m1,m2):
+  #BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius))
+  #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
+  KAPPA = 1
+  BU_el = (SIGMA*m1.radius)/(EPS*EPS0*(1+KAPPA*m2.radius))
   return BU_el
 
 
 #steric (w.r. to m1)
 def steric(m1,m2):
+  h = (dist(m1,m2)-m1.radius-m2.radius)
+
+  if (h > 2*H):
+    return 0
+  
   a_eff = ((1/m1.radius) + (1/m2.radius)) ** (-1)
-  fst_nominator = 16 * np.pi * a_eff * H
-  fst_denominator = 35 * SIGMA
-  y= ((dist(m1,m2)-m1.radius-m2.radius) / (2*H))
+  fst_nominator = 16 * np.pi * a_eff * H * H * (SIGMA ** (3/2))
+  fst_denominator = 35 # * SIGMA
+
+  y = (h / (2*H))
 
 
   snd = 28 * (y**(-1/4) - 1)
@@ -67,6 +82,7 @@ def steric(m1,m2):
   fth = 12 * (y - 1)
 
   BU_st = (fst_nominator / fst_denominator) * (snd + trd + fth)
+
   return BU_st #*10**(-4.6)
 
 
