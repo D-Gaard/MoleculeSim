@@ -22,18 +22,18 @@ SIGMA = 0.006 #grafting density
 H = 7 #width of the polyelectrolyte brush in nm
 
 def kappa():
-  nom = consts.epsilon_0 * EPS * consts.R * TEMPERATURE
+  nom = EPS0 * EPS * consts.R * TEMPERATURE
   denom = consts.physical_constants["Faraday constant"][0]**2 * I
-  return np.sqrt(nom/denom)
+  return np.sqrt(nom/denom) * 10 ** (9)
 
 def elec_repv2(m1,m2):
   h = dist(m1,m2)-m1.radius-m2.radius
-  left = -2*np.pi*m1.radius*EPS0*EPS*(PHII**2)
+  left = 2*np.pi*m1.radius*EPS0*EPS*(PHII**2) #only using m1 radius here perhaps need change
   right1 = kappa()**(-1)
-  right2 = np.exp(kappa()**(-1) * h)
-  right3 = np.log(1+np.exp(kappa()**(-1) * h))
-  print("left: ", left, ", kappa inv: ", right1, "h:", h, "np exp: ", right2, ", numpy log: ", right3)
-  return -2*np.pi*m1.radius*EPS0*EPS*(PHII**2) * np.log(1+np.exp(kappa()**(-1) * h))
+  right2 = np.exp(-(right1 * h))
+  right3 = np.log(1+right2)
+  print("left: ", left, "kappa", kappa(), "kappa inv",kappa()**(-1), ", kappa exp: ", right1, "h:", h, "np exp: ", right2, ", numpy log: ", right3,"res", left * right3 )
+  return left * right3 
 
 #Van der Waal (w.r. to m1)
 def vdw(m1,m2):
@@ -51,7 +51,7 @@ def vdw(m1,m2):
 def elec_rep(m1,m2):
   BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist(m1,m2)-m1.radius-m2.radius)))
   #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
-  return BU_el
+  return BU_el #* 10 ** (8)
 
 
 #electrostatic repulsion (w.r. to m1)
@@ -87,10 +87,12 @@ def steric(m1,m2):
 
 
 
+def total_force_molecule(m1,m2):
+  return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
+
 #test force for movment of system
 def dummy_force(m1,m2):
   return 3 if dist(m1,m2) else 0
-
 
 #calculate if move is accepted based on forces
 def accept_move(ePrev,eNew,Beta):
