@@ -18,3 +18,7 @@ electrostatic:
 
 Simulation:
 is our system NVT (const temp) or NVE (const energy)
+
+
+----------------
+17/12 - why 1 mask with pixels from the object it self (f), and one without (g)
