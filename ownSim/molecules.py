@@ -43,9 +43,19 @@ class GroupMolecule:
 def dummy_move(mol, threshold):
   x = np.random.uniform(0, 1)
 
-def get_energy(mol_fixed,universe): #compute the energy of all molecules with respect to
-  u_nom1 = [m for m in universe.molecules if all(m.pos != mol_fixed.pos)]
-  energy = sum([fc.total_force_molecule(mol_fixed,m2) for m2 in u_nom1])
+# def get_energy(mol_fixed,universe): #compute the energy of all molecules with respect to
+#   u_nom1 = [m for m in universe.molecules if all(m.pos != mol_fixed.pos)]
+#   energy = sum([fc.total_force_molecule(mol_fixed,m2) for m2 in u_nom1])
+#   return energy
+  
+def get_energy(mol_fixed, universe, mol_moved = None): #compute the energy of all molecules with respect to
+  idx = universe.molecules.index(mol_fixed)
+  nbs = [m for m in universe.molecules]
+  del nbs[idx]
+  if mol_moved != None: # if we moved the molecule
+    energy = sum([fc.total_force_molecule(mol_moved,m2) for m2 in nbs])
+  else: #just compute energy for the fixed/previous molecule
+    energy = sum([fc.total_force_molecule(mol_fixed,m2) for m2 in nbs])
   return energy
 
 
@@ -71,7 +81,7 @@ def step(universe,molecule,window = []):
       mol_copy.move(delta_pos)
 
       #calculate energy for potential new location
-      e_new = get_energy(mol_copy,universe)
+      e_new = get_energy(molecule, universe, mol_copy)
 
       # if move is accepted, make the real molecule perform the step
       accepted = fc.accept_move(e_current,e_new, BETA)
@@ -125,10 +135,10 @@ class SimpleUniverse:
 
 #the distance between two molecules
 def dist(m1,m2):
-  return np.linalg.norm([m1.pos,m2.pos])
+  return np.linalg.norm(m2.pos - m1.pos)
 
 def inter_dist(m1,m2):
-  return np.linalg.norm([m1.pos,m2.pos]) -  m1.radius - m2.radius
+  return np.linalg.norm(m2.pos - m1.pos) -  m1.radius - m2.radius
 
 def avg_dist(frames):
     dist = []
