@@ -21,4 +21,15 @@ is our system NVT (const temp) or NVE (const energy)
 
 
 ----------------
-17/12 - why 1 mask with pixels from the object it self (f), and one without (g)
+19/12
+- sidste graf beregning
+- how to handle border, to avoid a bunch of attemts to generate random values outside the  boundary
+- how to spawn points - just at random initial positions with a radius deffined by gaussian?
+    2d gauss noise trick does not rlt work for spheres
+- bias correction
+- multiply by beta?
+- problem of overlapping points, spawn, der kan man bare søge for at de ikke overlapper, men under sims
+  er det for coputationally krævende
+
+
+Notes: 19/12

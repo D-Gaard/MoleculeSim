@@ -49,9 +49,9 @@ def vdw(m1,m2):
 
 #electrostatic repulsion (w.r. to m1)
 def elec_rep(m1,m2):
-  BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist(m1,m2)-m1.radius-m2.radius)))
+  U_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist(m1,m2)-m1.radius-m2.radius)))
   #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
-  return BU_el #* 10 ** (8)
+  return U_el #* 10 ** (8)
 
 
 #electrostatic repulsion (w.r. to m1)
@@ -59,8 +59,8 @@ def elec_rep3(m1,m2):
   #BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius))
   #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
   KAPPA = 1
-  BU_el = (SIGMA*m1.radius)/(EPS*EPS0*(1+KAPPA*m2.radius))
-  return BU_el
+  U_el = (SIGMA*m1.radius)/(EPS*EPS0*(1+KAPPA*m2.radius))
+  return U_el
 
 
 #steric (w.r. to m1)
@@ -81,9 +81,9 @@ def steric(m1,m2):
   trd = (20/11) * (1 - y**(11/4))
   fth = 12 * (y - 1)
 
-  BU_st = (fst_nominator / fst_denominator) * (snd + trd + fth)
+  U_st = (fst_nominator / fst_denominator) * (snd + trd + fth)
 
-  return BU_st #*10**(-4.6)
+  return U_st #*10**(-4.6)
 
 
 
@@ -91,10 +91,12 @@ def total_force_molecule(m1,m2):
   return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
 
 #test force for movment of system
-def dummy_force(m1,m2):
-  return 3 if dist(m1,m2) else 0
+#def dummy_force(m1,m2):
+#  return 3 if dist(m1,m2) else 0
 
 #calculate if move is accepted based on forces
 def accept_move(ePrev,eNew,Beta):
   proba = min(1, np.exp(-Beta*(ePrev-eNew)))
   return random.random() < proba
+
+

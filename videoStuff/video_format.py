@@ -44,7 +44,7 @@ def get_frame(frame_number, video_path=VIDEO_PATH):
   vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
   #read frame
   ret, frame = vidcap.read()
-  frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+  frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
   vidcap.release()
 
   if not ret:
@@ -71,7 +71,7 @@ def save_img(frame_number,video_path=VIDEO_PATH,save_path=FRAME_PATH):
   # set frame used, used with 0 indexing
   vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
   _,image = vidcap.read()
-  image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+  image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
 
   #Save image as JPEG
@@ -88,6 +88,23 @@ def get_frames(frames):
 def save_imgs(frames):
   return [save_img(f_num) for f_num in frames]
 
+
+
+###################################################
+# CODE BELOW IS TAKEN FROM BACHELOR PAPER (https://github.com/cappertherapper/Bachelorprojekt/blob/main)
+
+from skimage import io, morphology, filters
+from skimage.color import rgb2gray, rgba2rgb
+from skimage.morphology import label
+from skimage.segmentation import clear_border
+import numpy as np
+import cv2
+
+# function to yield area of image
+#...
+
+
+
 def biasField(I, mask):
     (rows,cols) = I.shape
     r, c = np.meshgrid(list(range(rows)), list(range(cols)))
@@ -102,11 +119,99 @@ def biasField(I, mask):
     return(J)
 
 
+def resize(arr, size=None, corner=None):
+    """Resizes array or ensures that dimensions are the same"""
+    start, end = None, None
+    min_size = min(arr.shape[0], arr.shape[1])
+    if not size:
+        start = 0
+        end = min_size
+    elif not corner:
+        start = (min_size - size) // 2
+        end = start + size
+    else:
+        start = corner
+        end = corner + size
+    return arr[start:end, start:end]
+
+
+def preprocess(image, threshold, smooth=1, clear_borders=False):
+    imFilt = filters.gaussian(image, smooth)
+
+    imThresh = imFilt > threshold
+
+    B = biasField(imFilt, imThresh)
+    imBias = imFilt - B + B.mean()
+
+    imBiasThresh = imBias > threshold
+
+    if clear_borders:
+        imBiasThresh = clear_border(imBiasThresh) # if components touch border, remove them
+
+    labels = label(imBiasThresh) #get connected components of image
+    return labels
+
+
+def process_image(path, threshold, smooth=1, size=None):
+    im = io.imread(path)
+    if im.ndim == 2: 
+        pass
+    elif im.shape[2] == 3:
+        im = rgb2gray(im) #grey scale image
+    else:
+        im = rgb2gray(rgba2rgb(im))
+    im = resize(im)
+    return preprocess(im, threshold, smooth=smooth) #apply gaussian smoothing and bias + misc to img
+
+
+def get_video(path, skip_size=1):
+    video = cv2.VideoCapture(path)
+    frames = []
+    frame_count = 0
+
+    while True:
+        ret, frame = video.read()
+        if not ret:
+            break
+        if frame_count % skip_size == 0:
+            im = rgb2gray(frame)
+            im = resize(im)
+            frames.append(im)
+        frame_count += 1
+        
+    video.release()
+
+    frames_array = np.array(frames)
+    return frames_array
+
+
+def process_video(path, threshold=None, smooth=1, skip_size=1, size=None):
+    video = cv2.VideoCapture(path)
+    frames = []
+    frame_count = 0
+
+    while True:
+        ret, frame = video.read()
+        if not ret:
+            break
+        if frame_count % skip_size == 0:
+            im = rgb2gray(frame)
+            im = resize(im, size)
+            im = preprocess(im, threshold, smooth=smooth)
+            frames.append(im)
+        frame_count += 1
+    
+    video.release()
+
+    frames_array = np.array(frames)
+    return frames_array
+
+
 
 
 ###########################################################################
 
-# CODE BELOW IS TAKEN FROM BACHELOR PAPER
+# CODE BELOW IS TAKEN FROM BACHELOR PAPER (https://github.com/cappertherapper/Bachelorprojekt/blob/main)
 from scipy import ndimage
 from skimage.measure import regionprops
 
