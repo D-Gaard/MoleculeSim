@@ -1,7 +1,8 @@
 import numpy as np
 import random
 import scipy.constants as consts
-from molecules import dist
+#from molecules import dist 
+import molecules as mc
 
 
 #BETA = 0.38 # std of diameter distribution of casein micelles
@@ -27,7 +28,7 @@ def kappa():
   return np.sqrt(nom/denom) * 10 ** (9)
 
 def elec_repv2(m1,m2):
-  h = dist(m1,m2)-m1.radius-m2.radius
+  h = mc.dist(m1,m2)-m1.radius-m2.radius
   left = 2*np.pi*m1.radius*EPS0*EPS*(PHII**2) #only using m1 radius here perhaps need change
   right1 = kappa()**(-1)
   right2 = np.exp(-(right1 * h))
@@ -38,7 +39,7 @@ def elec_repv2(m1,m2):
 #Van der Waal (w.r. to m1)
 def vdw(m1,m2):
   _2a1a2 = 2*m1.radius*m2.radius
-  r2 = dist(m1,m2)**2
+  r2 = mc.dist(m1,m2)**2
   square_p = (m1.radius + m2.radius)**2
   square_n = (m1.radius - m2.radius)**2
 
@@ -49,7 +50,7 @@ def vdw(m1,m2):
 
 #electrostatic repulsion (w.r. to m1)
 def elec_rep(m1,m2):
-  U_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist(m1,m2)-m1.radius-m2.radius)))
+  U_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(mc.dist(m1,m2)-m1.radius-m2.radius)))
   #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
   return U_el #* 10 ** (8)
 
@@ -65,7 +66,7 @@ def elec_rep3(m1,m2):
 
 #steric (w.r. to m1)
 def steric(m1,m2):
-  h = (dist(m1,m2)-m1.radius-m2.radius)
+  h = (mc.dist(m1,m2)-m1.radius-m2.radius)
 
   if (h > 2*H):
     return 0
@@ -76,7 +77,6 @@ def steric(m1,m2):
 
   y = (h / (2*H))
 
-
   snd = 28 * (y**(-1/4) - 1)
   trd = (20/11) * (1 - y**(11/4))
   fth = 12 * (y - 1)
@@ -86,13 +86,8 @@ def steric(m1,m2):
   return U_st #*10**(-4.6)
 
 
-
 def total_force_molecule(m1,m2):
   return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
-
-#test force for movment of system
-#def dummy_force(m1,m2):
-#  return 3 if dist(m1,m2) else 0
 
 #calculate if move is accepted based on forces
 def accept_move(ePrev,eNew,Beta):
