@@ -8,7 +8,7 @@ VISCOSITY = 1.2    # might not be accurate
 TEMPERATURE = 310.15 # degrees kelvin
 BOLTZMANN = 1/(consts.Boltzmann * TEMPERATURE) #denoted beta
 MAX_TRANSLATE = 5 #maximum step size that can be taken along each axis, given in nanometers
-BETA = BOLTZMANN
+BETA = 1 # formulas alread calculate energy as U*BOLTZMANN, so it is built in
 
 #NOTE
 #Considerations: self.mass, group, group movement, diffusion coefficient or similar?

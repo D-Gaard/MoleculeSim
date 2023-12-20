@@ -33,3 +33,11 @@ is our system NVT (const temp) or NVE (const energy)
 
 
 Notes: 19/12
+
+
+
+
+
+QUESTION JON JULEFERIE:
+20/12
+- Brug af Beta til acceptance (virker kun realistisk for B = 1, er beta indkorporeret i vores energy?)
