@@ -48,6 +48,11 @@ def get_energy(mol_fixed, universe, mol_moved = None):
     energy = sum([universe.force_fun(mol_moved,m2) for m2 in nbs])
   else: #just compute energy for the fixed/previous molecule
     energy = sum([universe.force_fun(mol_fixed,m2) for m2 in nbs])
+
+  if np.isnan(energy):
+    print("encountered nan energy, converting to 0 (consider fixing this) \n")
+    energy = 0
+
   return energy
 
 
@@ -58,17 +63,19 @@ def within_box(molecule, delta_pos, box_size):
     return False
   return True
 
-# apply basic movement to molecule/group
+# apply basic movement to molecule runs until a move for the given molecule is found
+# not ideal to use
 def step(universe,molecule,window = []):
   step_taken = False
   # get current energy
   e_current = get_energy(molecule, universe)
+  print("energy", e_current,type(e_current))
   while (not step_taken):
     # Get step vector and add it to molecule copy
     delta_pos = np.random.uniform(-MAX_TRANSLATE,MAX_TRANSLATE,3)
-
+    print("am i in box?", within_box(molecule, delta_pos, universe.box_size))
     if within_box(molecule, delta_pos, universe.box_size): #check that move is possible in universe
-
+      print("im in")
       mol_copy = copy.deepcopy(molecule)
       mol_copy.move(delta_pos)
 
@@ -80,6 +87,7 @@ def step(universe,molecule,window = []):
       if accepted:
         molecule.move(delta_pos)
         step_taken = True
+
 
 
 
@@ -108,14 +116,50 @@ def simple_step(universe,molecule):
   return step_taken
 
 
+#uniformly attempt to spawn spheres, if overlap, then a new position is chosen (so a mc scheeme)
+#fails after max_attempts fails for a single molecule
+def spawn_uniformly_random(num_spheres, box_dimensions, radii, max_attempts = 100):
+
+  def check_overlap(new_sphere, existing_spheres):
+    for sphere in existing_spheres:
+        distance = np.linalg.norm(new_sphere[:3] - sphere[:3])
+        if distance < new_sphere[3] + sphere[3]:
+            return True
+    return False
+
+  spheres = []
+  box_min = np.array([0, 0, 0])
+  box_max = np.array(box_dimensions)
+  attempts = 0
+
+  for i in range(num_spheres):
+    radius = radii[i]
+    position = np.random.uniform(box_min + radius, box_max - radius)
+    new_sphere = np.append(position, radius)
+
+    attempts = 0
+    while check_overlap(new_sphere, spheres):
+        position = np.random.uniform(box_min + radius, box_max - radius)
+        new_sphere = np.append(position, radius)
+        attempts += 1
+
+        if attempts > max_attempts:
+          print("Unable to spawn points withing the box")
+          return None
+
+    spheres.append(new_sphere)
+
+  return [Molecule(np.array([x,y,z]),r) for (x,y,z,r) in spheres]
+
 
 def create_initial_molecules(box_size,num_molecules,radii,own_molecules):
   if own_molecules != None: #own deffined molecule list
     return own_molecules
   else: #generate uniformly random molecules with radii
-    return [Molecule(np.array([random.uniform(0,box_size[0]), 
-                      random.uniform(0,box_size[1]), 
-                      random.uniform(0,box_size[2]) ]),radii[i]) for i in range(num_molecules)]
+    return spawn_uniformly_random(num_molecules,box_size,radii)
+    #return [Molecule(np.array([random.uniform(0,box_size[0]), 
+    #                  random.uniform(0,box_size[1]), 
+    #                  random.uniform(0,box_size[2]) ]),radii[i]) for i in range(num_molecules)]
 
 #spawn molecules within a grid
 #def grid_spawner(box_size,radius, spacing):
@@ -138,25 +182,57 @@ class SimpleUniverse:
     self.force_fun = force_fun
 
 
-  
+    #stats:
+    self.move_ctr = 0 #amount of steps taken
+    #coutners for acceptence/rejection, and list of actions
+    self.acceptance_list = []
+    self.acceptance_ctr = 0
+    self.rejction_ctr = 0 
 
-  #def update_group(self,): #moves a single group based on forces considered
 
   #select random molecule
   def select_molecule(self):
     return random.choice(self.molecules)
   
   #get state of universe
+  # 0 = position (default)
+  # 1 = with radius
   def get_state(self,with_radius = False):
     if (with_radius):
       return np.array([mol.pos for mol in self.molecules]), np.array([mol.radius for mol in self.molecules])
     else:
       return np.array([mol.pos for mol in self.molecules])
+  
+  #get stats
+  # 0 (default) == everything
+  def get_stats(self, state=0):
+    if (state==0):
+      return  self.acceptance_ctr, self.rejction_ctr, self.acceptance_list, self.move_ctr
+  
+  #update move stats, should be caled after/at the end of move
+  def update_move_stats(self, move_bool):
+    if move_bool:
+      self.acceptance_ctr += 1
+    else:
+      self.rejction_ctr += 1
     
-  def time_step(self): #apply a single timestep update of all groups
-    for elm in self.molecules:
-      movement = 0#step(elm ,window)
-      elm.move(movement)
+    self.acceptance_list.append(move_bool)
+
+  #take a step (maybe add support for passing a step function)
+  def make_step(self):
+    if (len(self.molecules)<= 0): #check if step possible
+      print("No molecules in universe, cant perform a step")
+      
+    else: #perform a step
+      mol = self.select_molecule()
+
+      step_bool = simple_step(self,mol)
+      self.update_move_stats(step_bool)
+
+
+
+    
+
 
 
 #the distance between two molecules
