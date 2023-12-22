@@ -91,7 +91,11 @@ def total_force_molecule(m1,m2):
 
 #calculate if move is accepted based on forces
 def accept_move(ePrev,eNew,Beta):
-  proba = min(1, np.exp(-Beta*(eNew-ePrev)))
+  proba = 0
+  if eNew-ePrev <= 0:
+    proba = 1
+  else:
+    proba = min(1, np.exp(-Beta*(eNew-ePrev)))
   return random.random() < proba
 
 

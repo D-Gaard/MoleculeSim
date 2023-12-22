@@ -50,8 +50,8 @@ def get_energy(mol_fixed, universe, mol_moved = None):
     energy = sum([universe.force_fun(mol_fixed,m2) for m2 in nbs])
 
   if np.isnan(energy):
-    print("encountered nan energy, converting to 0 (consider fixing this) \n")
-    energy = 0
+    print("encountered nan energy, converting to 100000000 (consider fixing this) \n")
+    energy = 100000000 
 
   return energy
 
@@ -118,7 +118,7 @@ def simple_step(universe,molecule):
 
 #uniformly attempt to spawn spheres, if overlap, then a new position is chosen (so a mc scheeme)
 #fails after max_attempts fails for a single molecule
-def spawn_uniformly_random(num_spheres, box_dimensions, radii, max_attempts = 100):
+def spawn_uniformly_random(num_spheres, box_dimensions, radii, max_attempts = 1000):
 
   def check_overlap(new_sphere, existing_spheres):
     for sphere in existing_spheres:
@@ -216,6 +216,7 @@ class SimpleUniverse:
     else:
       self.rejction_ctr += 1
     
+    self.move_ctr += 1
     self.acceptance_list.append(move_bool)
 
   #take a step (maybe add support for passing a step function)

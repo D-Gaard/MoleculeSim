@@ -41,3 +41,6 @@ Notes: 19/12
 QUESTION JON JULEFERIE:
 20/12
 - Brug af Beta til acceptance (virker kun realistisk for B = 1, er beta indkorporeret i vores energy?)
+
+#22/12
+- skal vi tælle random position uden for boundaries med som rejected steps 
