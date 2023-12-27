@@ -19,8 +19,11 @@ TEMPERATURE = 309.15 #kelvin = 36C
 I = 0.08 #Ionic strength, defined as (M,mol L)
 
 #steric repulstion constats:
-SIGMA = 0.006 #grafting density
+SIGMA = 0.006 * 0.25 #grafting density multiplied by cleaving (75% are cleaved off)
 H = 7 #width of the polyelectrolyte brush in nm
+MAX_FORCE_VAL = 9999999
+
+
 
 def kappa():
   nom = EPS0 * EPS * consts.R * TEMPERATURE
@@ -86,8 +89,16 @@ def steric(m1,m2):
   return U_st #*10**(-4.6)
 
 
-def total_force_molecule(m1,m2):
-  return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
+# def total_force_molecule(m1,m2):
+#   return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
+
+def total_force_molecule(m1,m2,threshold = 0.1):
+  if (mc.inter_dist(m1,m2) > threshold): #check if surface distance is possible
+    return vdw(m1,m2)  + steric(m1,m2) #+ elec_rep(m1,m2)
+  else: #return impossible energy -> rejection
+    return MAX_FORCE_VAL
+
+
 
 #calculate if move is accepted based on forces
 def accept_move(ePrev,eNew,Beta):
