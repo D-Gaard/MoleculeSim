@@ -21,7 +21,7 @@ I = 0.08 #Ionic strength, defined as (M,mol L)
 #steric repulstion constats:
 SIGMA = 0.006 * 0.25 #grafting density multiplied by cleaving (75% are cleaved off)
 H = 7 #width of the polyelectrolyte brush in nm
-MAX_FORCE_VAL = 9999999
+MAX_FORCE_VAL = 99999999999.
 
 
 
@@ -74,7 +74,7 @@ def steric(m1,m2):
   if (h > 2*H):
     return 0
   
-  a_eff = ((1/m1.radius) + (1/m2.radius)) ** (-1)
+  a_eff = ((1/m1.radius) + (1/m2.radius)) ** (-1) # maybe a_eff = m1.radius
   fst_nominator = 16 * np.pi * a_eff * H * H * (SIGMA ** (3/2))
   fst_denominator = 35 # * SIGMA
 
@@ -92,7 +92,7 @@ def steric(m1,m2):
 # def total_force_molecule(m1,m2):
 #   return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
 
-def total_force_molecule(m1,m2,threshold = 0.1):
+def total_force_molecule(m1,m2,threshold = 1):
   if (mc.inter_dist(m1,m2) > threshold): #check if surface distance is possible
     return vdw(m1,m2)  + steric(m1,m2) #+ elec_rep(m1,m2)
   else: #return impossible energy -> rejection
