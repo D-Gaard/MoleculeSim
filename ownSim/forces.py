@@ -2,7 +2,8 @@ import numpy as np
 import random
 import scipy.constants as consts
 #from molecules import dist 
-import molecules as mc
+#import molecules as mc
+#from joblib import wrap_non_picklable_objects, delayed
 
 
 #BETA = 0.38 # std of diameter distribution of casein micelles
@@ -31,7 +32,7 @@ def kappa():
   return np.sqrt(nom/denom) * 10 ** (9)
 
 def elec_repv2(m1,m2):
-  h = mc.dist(m1,m2)-m1.radius-m2.radius
+  h = dist2(m1.pos,m2.pos)-m1.radius-m2.radius #mc.dist(m1,m2)
   left = 2*np.pi*m1.radius*EPS0*EPS*(PHII**2) #only using m1 radius here perhaps need change
   right1 = kappa()**(-1)
   right2 = np.exp(-(right1 * h))
@@ -40,9 +41,11 @@ def elec_repv2(m1,m2):
   return left * right3 
 
 #Van der Waal (w.r. to m1)
+#@delayed
+#@wrap_non_picklable_objects
 def vdw(m1,m2):
   _2a1a2 = 2*m1.radius*m2.radius
-  r2 = mc.dist(m1,m2)**2
+  r2 = dist2(m1.pos,m2.pos)**2
   square_p = (m1.radius + m2.radius)**2
   square_n = (m1.radius - m2.radius)**2
 
@@ -53,7 +56,7 @@ def vdw(m1,m2):
 
 #electrostatic repulsion (w.r. to m1)
 def elec_rep(m1,m2):
-  U_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(mc.dist(m1,m2)-m1.radius-m2.radius)))
+  U_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist2(m1.pos,m2.pos)-m1.radius-m2.radius)))
   #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
   return U_el #* 10 ** (8)
 
@@ -69,7 +72,7 @@ def elec_rep3(m1,m2):
 
 #steric (w.r. to m1)
 def steric(m1,m2):
-  h = (mc.dist(m1,m2)-m1.radius-m2.radius)
+  h = (dist2(m1.pos,m2.pos)-m1.radius-m2.radius)
 
   if (h > 2*H):
     return 0
@@ -93,7 +96,7 @@ def steric(m1,m2):
 #   return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
 
 def total_force_molecule(m1,m2,threshold = 1):
-  if (mc.inter_dist(m1,m2) > threshold): #check if surface distance is possible
+  if (inter_dist2(m1.pos,m2.pos, m1.radius, m2.radius) > threshold): #check if surface distance is possible
     return vdw(m1,m2)  + steric(m1,m2) #+ elec_rep(m1,m2)
   else: #return impossible energy -> rejection
     return MAX_FORCE_VAL
@@ -108,5 +111,13 @@ def accept_move(ePrev,eNew,Beta):
   else:
     proba = min(1, np.exp(-Beta*(eNew-ePrev)))
   return random.random() < proba
+
+
+
+def dist2(p1,p2):
+  return np.linalg.norm(p2 - p1)
+
+def inter_dist2(p1,p2,r1,r2):
+  return np.linalg.norm(p2-p1) -  r1 - r2
 
 

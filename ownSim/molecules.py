@@ -3,6 +3,9 @@ import scipy.constants as consts
 import forces as fc
 import random
 import copy
+from joblib import delayed, Parallel
+#import pickle
+import uuid
 
 VISCOSITY = 1.2    # might not be accurate
 TEMPERATURE = 310.15 # degrees kelvin
@@ -38,17 +41,32 @@ class Molecule:
 #   def add_molecule(self, mol):
 #     self.molecules.append(mol)
 
-
+# def is_serializable(obj):
+#   try:
+#     pickle.dumps(obj)
+#     return True
+#   except pickle.PickleError:
+#     return False
+  
 #energy of all molecules with respect to moved/fixed. 
 def get_energy(mol_fixed, universe, mol_moved = None):
   idx = universe.molecules.index(mol_fixed)
   nbs = [m for m in universe.molecules]
   del nbs[idx]
+  # for i in range(len(nbs)):
+  #   if not is_serializable(nbs[i]):
+  #     print("molecule:", i, " failed")
+  # print("Universe fun is: ",is_serializable(universe.force_fun))
   if mol_moved != None: # if we moved the molecule
+    #print("Mol moved and: ",is_serializable(mol_moved))
+    #energy_lst = Parallel(require = "sharedmem", backend = "threading", n_jobs = 2)(delayed(universe.force_fun)(mol_moved,m2) for m2 in nbs)
     energy = sum([universe.force_fun(mol_moved,m2) for m2 in nbs])
   else: #just compute energy for the fixed/previous molecule
+    #print("Mol not moved and: ",is_serializable(mol_fixed))
     energy = sum([universe.force_fun(mol_fixed,m2) for m2 in nbs])
-
+    #energy_lst = Parallel(require = "sharedmem",backend = "threading",n_jobs = 2)(delayed(universe.force_fun)(mol_fixed,m2) for m2 in nbs)
+  
+  #energy = sum(energy_lst)
   if np.isnan(energy):
     print("encountered nan energy, converting to 100000000 (consider fixing this) \n")
     energy = 100000000 
@@ -203,6 +221,9 @@ def create_initial_molecules(box_size,num_molecules,radii,own_molecules):
 #spawn molecules within a grid
 #def grid_spawner(box_size,radius, spacing):
 #  x,y,z = np.arange(radius, box_size[0]- radius, step = 2*radius + spacing)
+
+
+
 
 
 #force_fun = force function used between molecules (vdw, steric and electrostatic as default)
@@ -390,3 +411,21 @@ def inter_dist(m1,m2):
 #         avg = cum / ((len(frame)-1) * (len(frame)-2))
 #         dist.append(avg)
 #     return dist
+
+
+def save_molecule_steps(points,radii,box_size,name="simV3R"):
+  #create unique name
+  name = name + "_" + str(len(points)) + "_" + str(box_size) + "_" + str(uuid.uuid4().hex)[:5] + ".npy"
+
+  with open(name, 'wb') as f:
+    np.save(f,np.array(points))
+    np.save(f,np.array(radii))
+
+  return name
+
+
+def load_molecule_steps(name):
+  with open(name, 'rb') as f:
+    poss = np.load(f)
+    radii = np.load(f)
+  return poss, radii
