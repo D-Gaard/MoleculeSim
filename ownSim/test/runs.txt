@@ -1,0 +1,8 @@
+# name, #stats:
+
+# Original force der er billeder af dens stats i discorden den 29/12:
+simV3R_1000_3800_775cb.npy  | 1000 mol, 1_000_000 iterations (every 10_000), size 3800
+simV3R_10000_3800_ea5e2.npy | 1000 mol, 1_000_000 iterations (every 1000), size 3800
+
+#run med force * 3
+simV3R_100_3800_bf5b8.npy   | 1000 mol, 100_000 iterations (every 1000), size 3800
