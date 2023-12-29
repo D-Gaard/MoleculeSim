@@ -11,5 +11,10 @@ simV3R_100_3800_bf5b8.npy   | 1000 mol, 100_000 iterations (every 1000), size 38
 
 
 #new format:
+
 #rightig force og stepsize = 5
 simV3R_100_3800_55d88.npy | 1000 mol, 100_000 iterations (every 1000), size 3800
+
+
+#rigtig force og stepsize = 5
+simV3R_1000_1050_9eeaa.npy | 20 mol, 1_000_000 iterations every 1000, size 1050
