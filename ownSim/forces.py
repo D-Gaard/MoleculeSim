@@ -14,7 +14,7 @@ HAMAKER = 1.0 # Estimate of Hamaker constant for casein micelles,
 #Electri repulsion constants:
 EPS0 = consts.epsilon_0#electric permittivity of vacuum
 EPS =  72#dielectric constant of the solvent, estimated to be in range [70,75] so far based on papers
-PHII = 8 #electrostaticpotential at the surface of particle i, generalized to be 8 based on papers
+PHII = -8 #electrostaticpotential at the surface of particle i, generalized to be 8 based on papers
 #KAPPA = #inverse Debye length
 TEMPERATURE = 309.15 #kelvin = 36C
 I = 0.08 #Ionic strength, defined as (M,mol L)
