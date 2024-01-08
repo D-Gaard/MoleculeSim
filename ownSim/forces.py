@@ -59,7 +59,7 @@ def vdw(m1,m2):
 def elec_rep(m1,m2):
   U_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist2(m1.pos,m2.pos)-m1.radius-m2.radius)))
   #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
-  return U_el #* 10 ** (8)
+  return U_el * 10 ** (8)
 
 
 #electrostatic repulsion (w.r. to m1)
@@ -98,7 +98,7 @@ def steric(m1,m2):
 
 def total_force_molecule(m1,m2,threshold = 1):
   if (inter_dist2(m1.pos,m2.pos, m1.radius, m2.radius) > threshold): #check if surface distance is possible
-    return vdw(m1,m2)  + steric(m1,m2) #+ elec_rep(m1,m2)
+    return vdw(m1,m2)  + steric(m1,m2) + elec_rep(m1,m2)
   else: #return impossible energy -> rejection
     return MAX_FORCE_VAL
 
