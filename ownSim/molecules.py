@@ -413,9 +413,9 @@ def inter_dist(m1,m2):
 #     return dist
 
 
-def save_molecule_steps(points,radii,accs,box_size,name="simV3R"):
+def save_molecule_steps(points,radii,accs,box_size,seed,skipsize, stepsize,name="simV3R"):
   #create unique name
-  name = name + "_" + str(len(points)) + "_" + str(box_size) + "_" + str(uuid.uuid4().hex)[:5] + ".npy"
+  name = name + "_" + str(len(points)) + "_" + str(box_size) + "_" + str(seed) + "_"  + str(stepsize) + "_" + str(skipsize) + "_" + str(uuid.uuid4().hex)[:5] + ".npy"
 
   with open(name, 'wb') as f:
     np.save(f,np.array(points))
