@@ -3,7 +3,7 @@ import scipy.constants as consts
 import forces as fc
 import random
 import copy
-from joblib import delayed, Parallel
+#from joblib import delayed, Parallel
 #import pickle
 import uuid
 

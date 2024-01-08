@@ -20,7 +20,8 @@ TEMPERATURE = 309.15 #kelvin = 36C
 I = 0.08 #Ionic strength, defined as (M,mol L)
 
 #steric repulstion constats:
-SIGMA = 0.006 * 0.25 #grafting density multiplied by cleaving (75% are cleaved off)
+CULLING_PERCENTAGE = 0.75 #75% are cleaved off
+SIGMA = 0.006 * (1-CULLING_PERCENTAGE) #grafting density multiplied by cleaving (75% are cleaved off)
 H = 7 #width of the polyelectrolyte brush in nm
 MAX_FORCE_VAL = 99999999999.
 

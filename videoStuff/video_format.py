@@ -264,7 +264,7 @@ from skimage.color import label2rgb
 from IPython.display import display, clear_output
 
 
-def visualize(video, F_list, G_list, F_noise=np.array([]), G_noise=np.array([]), L=100, save=False):
+def visualize(video, F_list, G_list, F_noise=np.array([]), G_noise=np.array([]), L=100, save=False,frame_name = "-1"):
     """Visualizes a list of data overlaps, can compare with one dataset"""
     fig, ax = plt.subplots(1,4, figsize=(14,6), gridspec_kw={'width_ratios': [1, 1, 1, 2]})
     plt.tight_layout()
@@ -281,7 +281,10 @@ def visualize(video, F_list, G_list, F_noise=np.array([]), G_noise=np.array([]),
         ax[3].plot(bx, by, '-r')
         ax[3].imshow(label2rgb(video[i], bg_label=0))
         # ax[3].set_title('frame nr.{}'.format(a * (i+1)))
-        ax[3].set_title('frame nr.{}'.format(i+1))
+        if frame_name == "-1":
+            ax[3].set_title('frame nr.{}'.format(i+1))
+        else:
+            ax[3].set_title(f'frame nr. {frame_name}')
 
         ax[0].set_title('Area overlap')
         ax[0].plot(F_list[i], color=colors[i])
