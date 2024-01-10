@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import skimage.filters as sk
 #import molecules as mc
 
 def plot_sphere(img, x, y, radius):
@@ -46,6 +47,12 @@ def get_3d_to_2d_img_gauss(p2dr,img_size,sigma_scale):
   
   return img
 
+#wrapper for smoothing image
+def gauss2dimg(img,sigma):
+  smooth = sk.gaussian(img,sigma)
+  return smooth
+
+
 #quick way to plot the ortographic projection in the z direction
 def plot_universe_in_2d(universe,sigma_scale=3):
   pd2r = get_points2d(universe)
@@ -60,3 +67,21 @@ def plot_universe_in_2d(universe,sigma_scale=3):
   plt.title("Ortographic projection in z (Gauss)")
   plt.imshow(img_gauss,cmap="gray")
   plt.show()
+
+
+
+#duplicate inputimage dupX times along X, and dupY times along Y
+def duplicate_image(img,dupX,dupY):
+  height,width = img.shape
+  new_height = height*dupY
+  new_width = width*dupX
+  duplicated_image = np.zeros((new_height, new_width))
+
+  for i in range(dupX):
+    for j in range(dupY):
+      paste_y = j * height
+      paste_x = i * width
+
+      duplicated_image[paste_y:paste_y + height, paste_x:paste_x + width] = img
+
+  return duplicated_image
