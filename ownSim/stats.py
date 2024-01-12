@@ -40,8 +40,7 @@ def avg_dist(frames,radii):
         dist.append(avg)
     return dist
 
-#assumens constant radius
-#avg distance between k molecules (and confidence interval)
+#avg of avg distance between k nearest molecules (and confidence interval)
 def avg_k_dist(frames,radii,k,upper=0.75,lower=0.25):
     dist = []
     cum_low = []
@@ -67,10 +66,11 @@ def avg_k_dist(frames,radii,k,upper=0.75,lower=0.25):
         cum_stats = sorted(cum_stats)
         low_val = int(len(frame)*lower)
         up_val = int(len(frame)*upper)
+
         #print(cum_stats[low_val],cum_stats[up_val])
-        cum_low.append(cum_stats[low_val])
-        cum_upper.append(cum_stats[up_val])
-        avg = cum / (len(frame))
+        cum_low.append(cum_stats[low_val]/k)
+        cum_upper.append(cum_stats[up_val]/k)
+        avg = cum / (len(frame)*k)
         dist.append(avg)
     return dist, cum_low, cum_upper
 
