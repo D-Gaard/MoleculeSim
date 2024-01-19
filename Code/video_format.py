@@ -2,7 +2,7 @@ import cv2
 import os
 import numpy as np
 
-#folder consts
+#folder consts (set these according to own paths)
 DATA_FOLDER = r"C:\Users\DGaard\Desktop\Gits\MoleculeSim\Data\\"
 VIDEO_NAME = "cheese_gel.avi"
 VIDEO_PATH = os.path.join(os.path.dirname(DATA_FOLDER), VIDEO_NAME)
@@ -10,7 +10,7 @@ FRAME_FOLDER = r"C:\Users\DGaard\Desktop\Gits\MoleculeSim\Data\frames\\"
 FRAME_PATH = os.path.dirname(FRAME_FOLDER)
 
 
-
+#produces the number of frames from the video
 def get_num_frames(video_path=VIDEO_PATH):
   vidcap = cv2.VideoCapture(video_path)
   _,_ = vidcap.read() 
@@ -53,7 +53,7 @@ def get_frame(frame_number, video_path=VIDEO_PATH):
 
   return frame
 
-
+#saves a specific frame from the video
 def save_img(frame_number,video_path=VIDEO_PATH,save_path=FRAME_PATH):
   vidcap = cv2.VideoCapture(video_path)
   _,_ = vidcap.read()
@@ -82,9 +82,11 @@ def save_img(frame_number,video_path=VIDEO_PATH,save_path=FRAME_PATH):
 
   return 0
 
+#loads a list of wanted frames
 def get_frames(frames):
   return [get_frame(f_num) for f_num in frames]
 
+#saves a list of wanted frames, and returns list of 0's if succesfull
 def save_imgs(frames):
   return [save_img(f_num) for f_num in frames]
 
@@ -99,10 +101,6 @@ from skimage.morphology import label
 from skimage.segmentation import clear_border
 import numpy as np
 import cv2
-
-# function to yield area of image
-#...
-
 
 
 def biasField(I, mask):

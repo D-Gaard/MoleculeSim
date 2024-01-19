@@ -3,20 +3,15 @@ import scipy.constants as consts
 import forces as fc
 import random
 import copy
-#from joblib import delayed, Parallel
-#import pickle
 import uuid
 
-VISCOSITY = 1.2    # might not be accurate
 TEMPERATURE = 310.15 # degrees kelvin
-BOLTZMANN = 1/(consts.Boltzmann * TEMPERATURE) #denoted beta
+BOLTZMANN = 1/(consts.Boltzmann * TEMPERATURE) #boltzman factor
 MAX_TRANSLATE = 5  #5 #maximum step size that can be taken along each axis, given in nanometers
-BETA = 1 # formulas alread calculate energy as U*BOLTZMANN, so it is built in
+BETA = 1 # formulas alread calculate energy as U*BOLTZMANN, so it is built in otherwise BETA=BOLTZMANN
 
-#NOTE
-#Considerations: self.mass, group, group movement, diffusion coefficient or similar?
 
-#molecule class, includes x,y,z coordinates and radius
+#simple molecule (sphere) class, includes x,y,z coordinates and radius
 class Molecule:
   def __init__(self, pos, radius):
     self.pos = pos #np.array of size 3
@@ -28,52 +23,26 @@ class Molecule:
   def update_pos(self, pos):
     self.pos = pos
   
-
-
-# #NOTE
-# #include diffusion coefficient/mass for groups? how to deal with multiple groups/molecules
-
-# #Contains a collection of atoms, applies the same update to the entire group
-# class GroupMolecule:
-#   def __init__(self):
-#     self.molecules = []
   
-#   def add_molecule(self, mol):
-#     self.molecules.append(mol)
-
-# def is_serializable(obj):
-#   try:
-#     pickle.dumps(obj)
-#     return True
-#   except pickle.PickleError:
-#     return False
-  
-#energy of all molecules with respect to moved/fixed. 
+#compute energy of all molecules with respect to moved/fixed.
+#attempted multithreading using joblib (was not faster)
 def get_energy(mol_fixed, universe, mol_moved = None):
   idx = universe.molecules.index(mol_fixed)
   nbs = [m for m in universe.molecules]
-  del nbs[idx]
-  # for i in range(len(nbs)):
-  #   if not is_serializable(nbs[i]):
-  #     print("molecule:", i, " failed")
-  # print("Universe fun is: ",is_serializable(universe.force_fun))
+  del nbs[idx] #exclude molecule from universe so we dont calculate its energy wrt. it self
+
   if mol_moved != None: # if we moved the molecule
-    #print("Mol moved and: ",is_serializable(mol_moved))
-    #energy_lst = Parallel(require = "sharedmem", backend = "threading", n_jobs = 2)(delayed(universe.force_fun)(mol_moved,m2) for m2 in nbs)
     energy = sum([universe.force_fun(mol_moved,m2) for m2 in nbs])
   else: #just compute energy for the fixed/previous molecule
-    #print("Mol not moved and: ",is_serializable(mol_fixed))
     energy = sum([universe.force_fun(mol_fixed,m2) for m2 in nbs])
-    #energy_lst = Parallel(require = "sharedmem",backend = "threading",n_jobs = 2)(delayed(universe.force_fun)(mol_fixed,m2) for m2 in nbs)
   
-  #energy = sum(energy_lst)
-  if np.isnan(energy):
+  if np.isnan(energy): #incase of problematic force function
     print("encountered nan energy, converting to 100000000 (consider fixing this) \n")
     energy = 100000000 
 
   return energy
 
-
+#check if a molecule (sphere) is within the bounding box
 def within_box(molecule, delta_pos, box_size):
   new_pos = molecule.pos + delta_pos + molecule.radius
   
@@ -81,83 +50,17 @@ def within_box(molecule, delta_pos, box_size):
     return False
   return True
 
-# apply basic movement to molecule runs until a move for the given molecule is found
-# not ideal to use
-def step(universe,molecule,window = []):
-  step_taken = False
-  # get current energy
-  e_current = get_energy(molecule, universe)
-  print("energy", e_current,type(e_current))
-  while (not step_taken):
-    # Get step vector and add it to molecule copy
-    delta_pos = np.random.uniform(-MAX_TRANSLATE,MAX_TRANSLATE,3)
-    print("am i in box?", within_box(molecule, delta_pos, universe.box_size))
-    if within_box(molecule, delta_pos, universe.box_size): #check that move is possible in universe
-      print("im in")
-      mol_copy = copy.deepcopy(molecule)
-      mol_copy.move(delta_pos)
-
-      #calculate energy for potential new location
-      e_new = get_energy(molecule, universe, mol_copy)
-
-      # if move is accepted, make the real molecule perform the step
-      accepted = fc.accept_move(e_current,e_new, BETA)
-      if accepted:
-        molecule.move(delta_pos)
-        step_taken = True
-
-
-
 
 #attemt 1 step, return if successful or not, and update the univrese
 #assumes energies are calculated as B*U, so the beta used is 1
 def simple_step(universe,molecule):
-  step_taken = False
+  step_taken = False #flag for indicating step succes
   
-  e_current = get_energy(molecule, universe)
+  e_current = get_energy(molecule, universe) #cur energy
 
-  delta_pos = np.random.uniform(-MAX_TRANSLATE,MAX_TRANSLATE,3)
+  delta_pos = np.random.uniform(-MAX_TRANSLATE,MAX_TRANSLATE,3) #random offset
 
   if within_box(molecule, delta_pos, universe.box_size): #check that move is possible in universe
-    mol_copy = copy.deepcopy(molecule)
-    mol_copy.move(delta_pos)
-
-    #calculate energy for potential new location
-    e_new = get_energy(molecule, universe, mol_copy)
-
-    # if move is accepted, make the real molecule perform the step
-    accepted = fc.accept_move(e_current,e_new, BETA)
-    if accepted:
-      molecule.move(delta_pos)
-      step_taken = True 
-
-  return step_taken
-
-
-#attemt 1 step, return if successful or not, and update the univrese
-#assumes energies are calculated as B*U, so the beta used is 1
-def threshold_step(universe,molecule):
-  step_taken = False
-  
-  e_current = get_energy(molecule, universe)
-
-  delta_pos = np.random.uniform(-MAX_TRANSLATE,MAX_TRANSLATE,3)
-
-  if within_box(molecule, delta_pos, universe.box_size): #check that move is possible in universe
-    mol_temp= copy.deepcopy(molecule)
-    mol_temp.move(delta_pos)
-    #pos = molecule.pos + delta_pos # compare this to all
-    
-    idx = universe.molecules.index(molecule)
-    nbs = [m for m in universe.molecules]
-    del nbs[idx]
-    gap = np.array([inter_dist(mol_temp,m) for m in nbs])
-    if any(x < 0 for x in gap): # check if we post move are trying to move inside another molecule
-      idx = gap.index(max(gap)) # get molecule idx with biggest overlap
-      counter_dist = mol_temp.radius + nbs[idx].radius - dist(nbs[idx],mol_temp) #to make them overlap less
-      unit_vec = (mol_temp.pos - nbs[idx].pos) / np.linalg.norm(mol_temp.pos - nbs[idx].pos)
-      delta_pos += counter_dist * unit_vec
-
     mol_copy = copy.deepcopy(molecule)
     mol_copy.move(delta_pos)
 
@@ -209,23 +112,22 @@ def spawn_uniformly_random(num_spheres, box_dimensions, radii, max_attempts = 10
   return [Molecule(np.array([x,y,z]),r) for (x,y,z,r) in spheres]
 
 
+#wrapper for choosing between pased molecules or generating them randomly
 def create_initial_molecules(box_size,num_molecules,radii,own_molecules):
   if own_molecules != None: #own deffined molecule list
     return own_molecules
   else: #generate uniformly random molecules with radii
     return spawn_uniformly_random(num_molecules,box_size,radii)
-    #return [Molecule(np.array([random.uniform(0,box_size[0]), 
-    #                  random.uniform(0,box_size[1]), 
-    #                  random.uniform(0,box_size[2]) ]),radii[i]) for i in range(num_molecules)]
-
-#spawn molecules within a grid
-#def grid_spawner(box_size,radius, spacing):
-#  x,y,z = np.arange(radius, box_size[0]- radius, step = 2*radius + spacing)
 
 
 
 
-
+#Universe class for creating and running simulations
+#box_size = universe cobe from (0,0,0) to box size
+#num_molecules = the desired amount of molecules
+#radii = list of radii for each of the desired molecules
+#seed = for controling reproducability
+#own_molecules = if you want to pass own list of point arrays for molecules
 #force_fun = force function used between molecules (vdw, steric and electrostatic as default)
 class SimpleUniverse:
   def __init__(self,box_size, num_molecules,radii,seed,own_molecules=None, force_fun = fc.total_force_molecule):
@@ -286,7 +188,6 @@ class SimpleUniverse:
       
     else: #perform a step
       mol = self.select_molecule()
-
       step_bool = simple_step(self,mol)
       self.update_move_stats(step_bool)
   
@@ -297,11 +198,85 @@ class SimpleUniverse:
       
     else: #perform a step
       mol = self.select_molecule()
-
       step_bool = threshold_step(self,mol)
       self.update_move_stats(step_bool)
 
 
+#the distance between two molecules
+def dist(m1,m2):
+  return np.linalg.norm(m2.pos - m1.pos)
+
+#the surface distance between two molecules
+def inter_dist(m1,m2):
+  return np.linalg.norm(m2.pos - m1.pos) -  m1.radius - m2.radius
+
+
+#save a simulation - point frames, radii, acceptance list
+#file name: name, num frames saved, boxsize x and y, seed, stepsize, frames skiped, uniqe chars
+def save_molecule_steps(points,radii,accs,box_size,seed,skipsize, stepsize,name="simV3R"):
+  #create unique name
+  name = name + "_" + str(len(points)) + "_" + str(box_size) + "_" + str(seed) + "_"  + str(stepsize) + "_" + str(skipsize) + "_" + str(uuid.uuid4().hex)[:5] + ".npy"
+
+  with open(name, 'wb') as f:
+    np.save(f,np.array(points))
+    np.save(f,np.array(radii))
+    np.save(f,np.array(accs))
+
+  return name
+
+#Load a simulation - point frames, radii, acceptance list 
+def load_molecule_steps(name):
+  with open(name, 'rb') as f:
+    poss = np.load(f)
+    radii = np.load(f)
+    accs = np.load(f)
+  return poss, radii, accs
+
+
+
+
+#----------------------- Attempted to do grouping of molecules -----------------------
+
+#attemt 1 step, return if successful or not, and update the univrese
+#if move results in overlapping spheres then move molecule back until this is no longer the case
+#assumes energies are calculated as B*U, so the beta used is 1
+def threshold_step(universe,molecule):
+  step_taken = False
+  
+  e_current = get_energy(molecule, universe)
+
+  delta_pos = np.random.uniform(-MAX_TRANSLATE,MAX_TRANSLATE,3)
+
+  if within_box(molecule, delta_pos, universe.box_size): #check that move is possible in universe
+    mol_temp= copy.deepcopy(molecule)
+    mol_temp.move(delta_pos)
+    #pos = molecule.pos + delta_pos # compare this to all
+    
+    idx = universe.molecules.index(molecule)
+    nbs = [m for m in universe.molecules]
+    del nbs[idx]
+    gap = np.array([inter_dist(mol_temp,m) for m in nbs])
+    if any(x < 0 for x in gap): # check if we post move are trying to move inside another molecule
+      idx = gap.index(max(gap)) # get molecule idx with biggest overlap
+      counter_dist = mol_temp.radius + nbs[idx].radius - dist(nbs[idx],mol_temp) #to make them overlap less
+      unit_vec = (mol_temp.pos - nbs[idx].pos) / np.linalg.norm(mol_temp.pos - nbs[idx].pos)
+      delta_pos += counter_dist * unit_vec
+
+    mol_copy = copy.deepcopy(molecule)
+    mol_copy.move(delta_pos)
+
+    #calculate energy for potential new location
+    e_new = get_energy(molecule, universe, mol_copy)
+
+    # if move is accepted, make the real molecule perform the step
+    accepted = fc.accept_move(e_current,e_new, BETA)
+    if accepted:
+      molecule.move(delta_pos)
+      step_taken = True 
+
+  return step_taken
+
+#group of molecules
 class Group:
   def __init__(self,molecules, id = 0):
     self.molecules = molecules
@@ -388,46 +363,3 @@ class GroupUniverse:
       step_bool = simple_step(self,mol)
       self.update_move_stats(step_bool)
     
-
-
-
-#the distance between two molecules
-def dist(m1,m2):
-  return np.linalg.norm(m2.pos - m1.pos)
-
-def inter_dist(m1,m2):
-  return np.linalg.norm(m2.pos - m1.pos) -  m1.radius - m2.radius
-
-# def avg_dist(frames):
-#     dist = []
-#     for frame in frames:
-#         cum = 0
-#         for i in range(len(frame)):
-#             mol1 = frame[i]
-#             for j in range(i+1,len(frame)):
-#                 mol2 = frame[j]
-#                 current_dist = np.linalg.norm(mol2-mol1)
-#                 cum += current_dist
-#         avg = cum / ((len(frame)-1) * (len(frame)-2))
-#         dist.append(avg)
-#     return dist
-
-
-def save_molecule_steps(points,radii,accs,box_size,seed,skipsize, stepsize,name="simV3R"):
-  #create unique name
-  name = name + "_" + str(len(points)) + "_" + str(box_size) + "_" + str(seed) + "_"  + str(stepsize) + "_" + str(skipsize) + "_" + str(uuid.uuid4().hex)[:5] + ".npy"
-
-  with open(name, 'wb') as f:
-    np.save(f,np.array(points))
-    np.save(f,np.array(radii))
-    np.save(f,np.array(accs))
-
-  return name
-
-
-def load_molecule_steps(name):
-  with open(name, 'rb') as f:
-    poss = np.load(f)
-    radii = np.load(f)
-    accs = np.load(f)
-  return poss, radii, accs

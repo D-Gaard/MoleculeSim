@@ -1,12 +1,6 @@
 import numpy as np
 import random
 import scipy.constants as consts
-#from molecules import dist 
-#import molecules as mc
-#from joblib import wrap_non_picklable_objects, delayed
-
-
-#BETA = 0.38 # std of diameter distribution of casein micelles
 
 #Van der Wall constants:
 HAMAKER = 1.0 # Estimate of Hamaker constant for casein micelles, 
@@ -26,24 +20,7 @@ H = 7 #width of the polyelectrolyte brush in nm
 MAX_FORCE_VAL = 99999999999.
 
 
-
-def kappa():
-  nom = EPS0 * EPS * consts.R * TEMPERATURE
-  denom = consts.physical_constants["Faraday constant"][0]**2 * I
-  return np.sqrt(nom/denom) * 10 ** (9)
-
-def elec_repv2(m1,m2):
-  h = dist2(m1.pos,m2.pos)-m1.radius-m2.radius #mc.dist(m1,m2)
-  left = 2*np.pi*m1.radius*EPS0*EPS*(PHII**2) #only using m1 radius here perhaps need change
-  right1 = kappa()**(-1)
-  right2 = np.exp(-(right1 * h))
-  right3 = np.log(1+right2)
-  print("left: ", left, "kappa", kappa(), "kappa inv",kappa()**(-1), ", kappa exp: ", right1, "h:", h, "np exp: ", right2, ", numpy log: ", right3,"res", left * right3 )
-  return left * right3 
-
-#Van der Waal (w.r. to m1)
-#@delayed
-#@wrap_non_picklable_objects
+#Van der Waal for two molecules (w.r. to m1) (see equation in the report)
 def vdw(m1,m2):
   _2a1a2 = 2*m1.radius*m2.radius
   r2 = dist2(m1.pos,m2.pos)**2
@@ -55,23 +32,12 @@ def vdw(m1,m2):
   thrd_term = np.log((r2 - square_p)/(r2 - square_n))
   return (-1/6) * HAMAKER*(fst_term + snd_term + thrd_term)
 
-#electrostatic repulsion (w.r. to m1)
+#electrostatic repulsion for two molecules (w.r. to m1) (see equation in the report)
 def elec_rep(m1,m2):
   U_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp( -(dist2(m1.pos,m2.pos)-m1.radius-m2.radius)))
-  #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
   return U_el * 10 ** (8)
 
-
-#electrostatic repulsion (w.r. to m1)
-def elec_rep3(m1,m2):
-  #BU_el = EPS0 * EPS * (PHII**2) * np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius))
-  #print(np.sqrt(2/(EPS0*EPS*np.log(1 + np.exp(dist(m1,m2)-m1.radius-m2.radius)))))
-  KAPPA = 1
-  U_el = (SIGMA*m1.radius)/(EPS*EPS0*(1+KAPPA*m2.radius))
-  return U_el
-
-
-#steric (w.r. to m1)
+#steric for two molecules (w.r. to m1) (see equation in the report)
 def steric(m1,m2):
   h = (dist2(m1.pos,m2.pos)-m1.radius-m2.radius)
 
@@ -90,21 +56,17 @@ def steric(m1,m2):
 
   U_st = (fst_nominator / fst_denominator) * (snd + trd + fth)
 
-  return U_st #*10**(-4.6)
+  return U_st
 
-
-# def total_force_molecule(m1,m2):
-#   return vdw(m1,m2) + elec_rep(m1,m2) + steric(m1,m2) 
-
-def total_force_molecule(m1,m2,threshold = 1):
+#calculate the combined force
+def total_force_molecule(m1,m2,threshold = 0.1):
   if (inter_dist2(m1.pos,m2.pos, m1.radius, m2.radius) > threshold): #check if surface distance is possible
     return vdw(m1,m2)  + steric(m1,m2) + elec_rep(m1,m2)
   else: #return impossible energy -> rejection
     return MAX_FORCE_VAL
 
 
-
-#calculate if move is accepted based on forces
+#calculate if move is accepted based on forces (see equation in the report)
 def accept_move(ePrev,eNew,Beta):
   proba = 0
   if eNew-ePrev <= 0:
@@ -113,12 +75,31 @@ def accept_move(ePrev,eNew,Beta):
     proba = min(1, np.exp(-Beta*(eNew-ePrev)))
   return random.random() < proba
 
-
-
+#distance between 2 vectors
 def dist2(p1,p2):
   return np.linalg.norm(p2 - p1)
 
+#surface distance between 2 vectors, and 2 radii
 def inter_dist2(p1,p2,r1,r2):
   return np.linalg.norm(p2-p1) -  r1 - r2
 
 
+#----------------------- other version of electrostatic attempted -----------------------
+def kappa():
+  nom = EPS0 * EPS * consts.R * TEMPERATURE
+  denom = consts.physical_constants["Faraday constant"][0]**2 * I
+  return np.sqrt(nom/denom) * 10 ** (9)
+
+def elec_repv2(m1,m2):
+  h = dist2(m1.pos,m2.pos)-m1.radius-m2.radius #mc.dist(m1,m2)
+  left = 2*np.pi*m1.radius*EPS0*EPS*(PHII**2) #only using m1 radius here perhaps need change
+  right1 = kappa()**(-1)
+  right2 = np.exp(-(right1 * h))
+  right3 = np.log(1+right2)
+  print("left: ", left, "kappa", kappa(), "kappa inv",kappa()**(-1), ", kappa exp: ", right1, "h:", h, "np exp: ", right2, ", numpy log: ", right3,"res", left * right3 )
+  return left * right3 
+
+def elec_rep3(m1,m2):
+  KAPPA = 1
+  U_el = (SIGMA*m1.radius)/(EPS*EPS0*(1+KAPPA*m2.radius))
+  return U_el

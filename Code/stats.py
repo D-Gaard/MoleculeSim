@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 
-#assumes constant radius
+#check for each frame of points if any molecules are overlapping
 def check_for_overlap(frames,radii):
     overlaps = []
     for frame in tqdm(frames):
@@ -20,12 +20,11 @@ def check_for_overlap(frames,radii):
 
     return overlaps
 
-#assumens constant radius
+#compute the average distance between molecules for each frame
 def avg_dist(frames,radii):
     dist = []
     for frame in tqdm(frames):
         cum = 0
-        #ctr = 0
         for i in range(len(frame)):
             mol1 = frame[i]
             rad1 = radii[i]
@@ -34,13 +33,12 @@ def avg_dist(frames,radii):
                 rad2 = radii[j]
                 current_dist = np.linalg.norm(mol2-mol1) - rad1 - rad2
                 cum += current_dist
-                #ctr += 1
-        #print(ctr,((len(frame)) * (len(frame)-1))/2)
+
         avg = cum / (((len(frame)) * (len(frame)-1))/2) #(N*(N-1)/2)
         dist.append(avg)
     return dist
 
-#avg of avg distance between k nearest molecules (and confidence interval)
+#compute avg of avg distance between k nearest molecules (and confidence interval) for each frame
 def avg_k_dist(frames,radii,k,upper=0.75,lower=0.25):
     dist = []
     cum_low = []
@@ -67,14 +65,13 @@ def avg_k_dist(frames,radii,k,upper=0.75,lower=0.25):
         low_val = int(len(frame)*lower)
         up_val = int(len(frame)*upper)
 
-        #print(cum_stats[low_val],cum_stats[up_val])
         cum_low.append(cum_stats[low_val]/k)
         cum_upper.append(cum_stats[up_val]/k)
         avg = cum / (len(frame)*k)
         dist.append(avg)
     return dist, cum_low, cum_upper
 
-#acceptence/rejectance rate
+#compute the acceptence/rejectance rate based on universe accptance list
 def mc_rate(acc_list):
     res_accs = []
     res_rejs = []
